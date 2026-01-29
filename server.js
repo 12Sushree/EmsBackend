@@ -23,6 +23,7 @@ app.use(
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   }),
 );
+app.options("*", cors());
 
 app.use("/api/auth", authRouter);
 app.use("/api/attendance", attendanceRouter);
@@ -35,5 +36,5 @@ app.use("/api/manager", managerRouter);
 
 app.listen(port, async () => {
   await connectDB();
-  console.log(`Server is active on http://localhost:${port}`);
+  console.log(`Server is active on port ${port}`);
 });
