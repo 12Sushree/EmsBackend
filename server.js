@@ -26,7 +26,7 @@ app.use(
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   }),
 );
-app.options("*", cors());
+app.options("/*", cors());
 
 app.use("/api/auth", authRouter);
 app.use("/api/attendance", attendanceRouter);
