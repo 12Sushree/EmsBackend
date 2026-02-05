@@ -62,12 +62,21 @@ exports.teamMembers = async (req, res) => {
         userId: emp._id,
       });
 
+      const tasks = await Task.find({ assignedTo: emp._id });
+      const completed = tasks.filter((t) => t.status === "Done").length;
+      const pending = tasks.length - completed;
+
       teamData.push({
         id: emp._id,
         userName: emp.userName,
         email: emp.email,
         role: emp.role,
         attendanceRecords: attendanceCount,
+        tasks: {
+          total: tasks.length,
+          completed,
+          pending,
+        },
       });
     }
 
@@ -96,19 +105,29 @@ exports.monitorProgress = async (req, res) => {
       });
     }
 
-    const tasks = await Task.find({ assignedBy: req.user.id });
-    const completed = tasks.filter((t) => t.status === "Done").length;
-    const pending = tasks.length - completed;
+    let totalTasks = 0;
+    let totalDone = 0;
+    let totalPending = 0;
+
+    for (let emp of team) {
+      const tasks = await Task.find({ assignedTo: emp._id });
+      const completed = tasks.filter((t) => t.status === "Done").length;
+      const pending = tasks.length - completed;
+
+      totalTasks += tasks.length;
+      totalDone += completed;
+      totalPending += pending;
+    }
 
     return res.status(200).json({
       success: true,
       summary: {
         teamSize: team.length,
-        totalTasks: tasks.length,
-        totalDone: completed,
-        totalPending: pending,
+        totalTasks,
+        totalDone,
+        totalPending,
         completionRate:
-          tasks.length === 0 ? 0 : ((completed / pending) * 100).toFixed(2),
+          totalTasks === 0 ? 0 : ((totalDone / totalTasks) * 100).toFixed(2),
       },
     });
   } catch (err) {

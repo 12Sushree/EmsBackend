@@ -2,9 +2,9 @@ const Task = require("../models/taskModel");
 
 exports.createTask = async (req, res) => {
   try {
-    const { title, description } = req.body;
+    const { title, description, assignedTo } = req.body;
 
-    if (!title || !description) {
+    if (!title || !description || !assignedTo) {
       return res.status(400).json({
         success: false,
         message: "All fields are required!",
@@ -14,6 +14,7 @@ exports.createTask = async (req, res) => {
     const task = await Task.create({
       title,
       description,
+      assignedTo,
       assignedBy: req.user.id,
     });
 
@@ -29,9 +30,9 @@ exports.createTask = async (req, res) => {
   }
 };
 
-exports.teamTasks = async (req, res) => {
+exports.myTasks = async (req, res) => {
   try {
-    const tasks = await Task.find({ assignedBy: req.user.managerId }).populate(
+    const tasks = await Task.find({ assignedTo: req.user.id }).populate(
       "assignedBy",
       "userName email",
     );
@@ -60,7 +61,7 @@ exports.updateStatus = async (req, res) => {
       });
     }
 
-    if (task.assignedBy.toString() !== req.user.managerId) {
+    if (task.assignedTo.toString() !== req.user.id) {
       return res.status(403).json({
         success: false,
         message: "Not your task!",
@@ -73,6 +74,31 @@ exports.updateStatus = async (req, res) => {
     return res.status(200).json({
       success: true,
       task,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+exports.allTasks = async (req, res) => {
+  try {
+    const tasks = await Task.find()
+      .populate("assignedTo", "userName email")
+      .populate("assignedBy", "userName email");
+
+    if (!tasks) {
+      return res.status(400).json({
+        success: false,
+        message: "No tasks found!",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      tasks,
     });
   } catch (err) {
     return res.status(500).json({
