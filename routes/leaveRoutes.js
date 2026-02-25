@@ -7,10 +7,17 @@ const {
   allLeaves,
   updateStatus,
 } = require("../controllers/leaveController");
+const { activeEmpOnly } = require("../middlewares/activeEmpMiddleware");
 
-router.post("/apply", auth, applyLeave);
+router.post("/apply", auth, activeEmpOnly, applyLeave);
 router.get("/my", auth, myLeaves);
 router.get("/all", auth, roleMid("Manager"), allLeaves);
-router.put("/status/:id", auth, roleMid("Manager"), updateStatus);
+router.patch(
+  "/status/:id",
+  auth,
+  roleMid("Manager"),
+  activeEmpOnly,
+  updateStatus,
+);
 
 module.exports = router;

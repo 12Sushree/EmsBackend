@@ -8,18 +8,28 @@ const attendanceSchema = new mongoose.Schema(
       required: true,
     },
     date: {
-      type: String,
+      type: Date,
       required: true,
     },
     checkIn: {
-      type: String,
-      required: true,
+      type: Date,
     },
     checkOut: {
+      type: Date,
+    },
+    workingHours: {
+      type: Number,
+      default: 0,
+    },
+    status: {
       type: String,
+      enum: ["Present", "Absent", "Half Day"],
+      default: "Present",
     },
   },
   { timestamps: true },
 );
+
+attendanceSchema.index({ userId: 1, date: 1 }, { unique: true });
 
 module.exports = mongoose.model("Attendance", attendanceSchema);

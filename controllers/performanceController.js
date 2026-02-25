@@ -1,46 +1,51 @@
 const Attendance = require("../models/attendanceModel");
 const Task = require("../models/taskModel");
-
-const timeToMinutes = (timeStr) => {
-  const [time, modifier] = timeStr.split(" ");
-  let [hours, minutes, seconds] = time.split(":").map(Number);
-  if (modifier === "PM" && hours !== 12) {
-    hours += 12;
-  }
-  if (modifier === "AM" && hours === 12) {
-    hours = 0;
-  }
-  return hours * 60 + minutes;
-};
+const mongoose = require("mongoose");
 
 exports.myPerformance = async (req, res) => {
   try {
-    const attendance = await Attendance.find({ userId: req.user.id });
+    const userId = new mongoose.Types.ObjectId(req.user.id);
 
-    let totalMins = 0;
-    const daily = attendance.map((a) => {
-      if (a.checkIn && a.checkOut) {
-        const diff = timeToMinutes(a.checkOut) - timeToMinutes(a.checkIn);
-        totalMins += diff;
-        return { date: a.date, minutes: diff };
-      }
-      return { date: a.date, minutes: 0 };
-    });
+    const attendanceStats = await Attendance.aggregate([
+      { $match: { userId } },
+      {
+        $group: {
+          _id: null,
+          totalHours: { $sum: "$workingHours" },
+        },
+      },
+    ]);
 
-    const tasks = await Task.find({ assignedTo: req.user.id });
-    const done = tasks.filter((t) => t.status === "Done").length;
-    const pending = tasks.length - done;
+    const workingHours = attendanceStats[0]?.totalHours || 0;
+
+    const stats = await Task.aggregate([
+      { $match: { assignedTo: userId } },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          completed: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "Done"] }, 1, 0],
+            },
+          },
+        },
+      },
+    ]);
+
+    const totalTasks = stats[0]?.total || 0;
+    const done = stats[0]?.completed || 0;
+    const pending = totalTasks - done;
 
     return res.status(200).json({
       success: true,
-      workingHours: {
-        totalHrs: (totalMins / 60).toFixed(2),
-        daily,
-      },
+      workingHours,
       performance: {
-        totalTasks: tasks.length,
+        totalTasks,
         completed: done,
         pending,
+        completionRate:
+          totalTasks === 0 ? 0 : ((done / totalTasks) * 100).toFixed(2),
       },
     });
   } catch (err) {

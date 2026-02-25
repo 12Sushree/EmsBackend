@@ -6,6 +6,7 @@ const leaveSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      index: true,
     },
     from: {
       type: Date,
@@ -14,22 +15,27 @@ const leaveSchema = new mongoose.Schema(
     to: {
       type: Date,
       required: true,
+      validate: {
+        validator: function (value) {
+          return value >= this.from;
+        },
+        message: "'to' date must be after 'from' date",
+      },
     },
     reason: {
       type: String,
       required: true,
+      trim: true,
     },
     status: {
       type: String,
       enum: ["Pending", "Approved", "Rejected"],
       default: "Pending",
     },
-    appliedAt: {
-      type: Date,
-      default: Date.now,
-    },
   },
   { timestamps: true },
 );
+
+leaveSchema.index({ userId: 1, status: 1 });
 
 module.exports = mongoose.model("Leave", leaveSchema);

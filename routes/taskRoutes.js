@@ -7,10 +7,17 @@ const {
   updateStatus,
   allTasks,
 } = require("../controllers/taskController");
+const { activeEmpOnly } = require("../middlewares/activeEmpMiddleware");
 
-router.post("/create", auth, roleMid("Manager"), createTask);
+router.post("/create", auth, roleMid("Manager"), activeEmpOnly, createTask);
 router.get("/my", auth, myTasks);
-router.put("/status/:id", auth, updateStatus);
+router.put(
+  "/status/:id",
+  auth,
+  roleMid("Employee"),
+  activeEmpOnly,
+  updateStatus,
+);
 router.get("/all", auth, roleMid("Manager"), allTasks);
 
 module.exports = router;

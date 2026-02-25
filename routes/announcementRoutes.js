@@ -5,8 +5,15 @@ const {
   createAnnouncement,
   getAnnouncements,
 } = require("../controllers/announcementController");
+const { activeEmpOnly } = require("../middlewares/activeEmpMiddleware");
 
-router.post("/create", auth, roleMid("Manager"), createAnnouncement);
+router.post(
+  "/create",
+  auth,
+  roleMid("Manager"),
+  activeEmpOnly,
+  createAnnouncement,
+);
 router.get("/all", auth, getAnnouncements);
 
 module.exports = router;
