@@ -1,27 +1,23 @@
-const SibApiV3Sdk = require("@getbrevo/brevo");
+const brevo = require("@getbrevo/brevo");
 
 exports.sendMail = async ({ to, subject, html }) => {
   try {
-    const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+    const apiInstance = new brevo.TransactionalEmailsApi();
 
-    const apiKey = SibApiV3Sdk.ApiClient.instance.authentications["api-key"];
-    apiKey.apiKey = process.env.BREVO_API_KEY;
+    apiInstance.setApiKey(
+      brevo.TransactionalEmailsApiApiKeys.apiKey,
+      process.env.BREVO_API_KEY,
+    );
 
-    const sendSmtpEmail = {
+    await apiInstance.sendTransacEmail({
       sender: {
         name: "EMS System",
-        email: "sushreeta4112@gmail.com",
+        email: "sushreeta4112@gmail.com", // must be verified in Brevo
       },
-      to: [
-        {
-          email: to,
-        },
-      ],
+      to: [{ email: to }],
       subject: subject,
       htmlContent: html,
-    };
-
-    await apiInstance.sendTransacEmail(sendSmtpEmail);
+    });
 
     console.log("Email sent successfully");
   } catch (error) {
