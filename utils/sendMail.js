@@ -1,28 +1,31 @@
-const nodemailer = require("nodemailer");
+const SibApiV3Sdk = require("@getbrevo/brevo");
 
 exports.sendMail = async ({ to, subject, html }) => {
   try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp-relay.brevo.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.BREVO_USER,
-        pass: process.env.BREVO_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
+    const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
 
-    await transporter.sendMail({
-      from: `"EMS System" <sushreeta4112@gmail.com>`,
-      to,
-      subject,
-      html,
-    });
-  } catch (err) {
-    console.error("Mail Error:", err.message);
+    const apiKey = SibApiV3Sdk.ApiClient.instance.authentications["api-key"];
+    apiKey.apiKey = process.env.BREVO_API_KEY;
+
+    const sendSmtpEmail = {
+      sender: {
+        name: "EMS System",
+        email: "sushreeta4112@gmail.com",
+      },
+      to: [
+        {
+          email: to,
+        },
+      ],
+      subject: subject,
+      htmlContent: html,
+    };
+
+    await apiInstance.sendTransacEmail(sendSmtpEmail);
+
+    console.log("Email sent successfully");
+  } catch (error) {
+    console.error("Mail Error:", error.response?.body || error.message);
     throw new Error("Email could not be sent");
   }
 };
