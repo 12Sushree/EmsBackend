@@ -1,4 +1,4 @@
-const brevo = require("@getbrevo/brevo");
+const brevo = require("@getbrevo/brevo").default;
 
 exports.sendMail = async ({ to, subject, html }) => {
   try {
