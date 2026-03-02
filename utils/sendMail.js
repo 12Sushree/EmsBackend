@@ -1,22 +1,19 @@
 const nodemailer = require("nodemailer");
-const dns = require("dns");
-
-dns.setDefaultResultOrder("ipv4first");
 
 exports.sendMail = async ({ to, subject, html }) => {
   try {
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
+      host: "smtp-relay.brevo.com",
       port: 587,
       secure: false,
       auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
+        user: process.env.BREVO_USER,
+        pass: process.env.BREVO_PASS,
       },
     });
 
     await transporter.sendMail({
-      from: process.env.MAIL_USER,
+      from: `"EMS System" <sushreeta4112@gmail.com>`,
       to,
       subject,
       html,
