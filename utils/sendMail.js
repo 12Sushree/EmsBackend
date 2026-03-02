@@ -10,6 +10,9 @@ exports.sendMail = async ({ to, subject, html }) => {
         user: process.env.BREVO_USER,
         pass: process.env.BREVO_PASS,
       },
+      tls: {
+        rejectUnauthorized: false,
+      },
     });
 
     await transporter.sendMail({
