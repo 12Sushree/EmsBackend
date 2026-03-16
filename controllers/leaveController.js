@@ -1,4 +1,5 @@
 const Leave = require("../models/leaveModel");
+const User = require("../models/userModel");
 
 const isValidate = (date) => !isNaN(new Date(date).getTime());
 
@@ -130,24 +131,25 @@ exports.myLeaves = async (req, res) => {
   }
 };
 
-exports.allLeaves = async (req, res) => {
+exports.getManagerLeaves = async (req, res) => {
   try {
-    const { page, limit, skip } = getPagination(req);
+    const managerId = req.user.id;
 
-    const total = await Leave.countDocuments();
+    const employees = await User.find({ reportingManager: managerId }).select(
+      "_id",
+    );
 
-    const data = await Leave.find()
-      .populate("userId", "empId userName email role")
-      .sort({ appliedAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    const employeeIds = employees.map((emp) => emp._id);
+
+    const leaves = await Leave.find({
+      userId: { $in: employeeIds },
+    })
+      .populate("userId", "userName empId")
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
-      page,
-      totalPages: Math.ceil(total / limit),
-      totalRecords: total,
-      data,
+      leaves,
     });
   } catch (err) {
     return res.status(500).json({
@@ -217,6 +219,52 @@ exports.updateStatus = async (req, res) => {
     return res.status(200).json({
       success: true,
       leave,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+exports.getMyLeaveCalendar = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const leaves = await Leave.find({ userId })
+      .populate("userId", "userName empId")
+      .sort({ from: 1 });
+
+    return res.status(200).json({
+      success: true,
+      leaves,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+exports.getTeamLeaveCalendar = async (req, res) => {
+  try {
+    const managerId = req.user.id;
+
+    const employees = await User.find({ reportingManager: managerId }).select(
+      "_id",
+    );
+
+    const employeeIds = employees.map((emp) => emp._id);
+
+    const leaves = await Leave.find({ userId: { $in: employeeIds } })
+      .populate("userId", "userName empId")
+      .sort({ from: 1 });
+
+    return res.status(200).json({
+      success: true,
+      leaves,
     });
   } catch (err) {
     return res.status(500).json({

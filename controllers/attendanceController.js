@@ -39,27 +39,34 @@ exports.checkIn = async (req, res) => {
       });
     }
 
-    const existing = await Attendance.findOne({
+    let record = await Attendance.findOne({
       userId: req.user.id,
       date: { $gte: start, $lt: end },
     });
 
-    if (existing) {
-      return res.status(400).json({
-        success: false,
-        message: "Already checked in today!",
+    if (!record) {
+      record = await Attendance.create({
+        userId: req.user.id,
+        date: start,
+        sessions: [{ checkIn: new Date() }],
       });
-    }
+    } else {
+      const lastSession = record.sessions[record.sessions.length - 1];
 
-    const attendance = await Attendance.create({
-      userId: req.user.id,
-      date: start,
-      checkIn: new Date(),
-    });
+      if (lastSession && !lastSession.checkOut) {
+        return res.status(400).json({
+          success: false,
+          message: "Already checked in!",
+        });
+      }
+
+      record.sessions.push({ checkIn: new Date() });
+      await record.save();
+    }
 
     return res.status(200).json({
       success: true,
-      attendance,
+      record,
     });
   } catch (err) {
     return res.status(500).json({
@@ -99,33 +106,32 @@ exports.checkOut = async (req, res) => {
       });
     }
 
-    if (record.checkOut) {
+    const lastSession = record.sessions[record.sessions.length - 1];
+
+    if (!lastSession || lastSession.checkOut) {
       return res.status(400).json({
         success: false,
-        message: "Already checked out!",
+        message: "No active check-in found!",
       });
     }
 
-    record.checkOut = new Date();
+    lastSession.checkOut = new Date();
 
-    if (record.checkIn) {
-      const inMin = timeToMinutes(record.checkIn);
-      const outMin = timeToMinutes(record.checkOut);
+    let totalMinutes = 0;
 
-      let diff = outMin - inMin;
+    record.sessions.forEach((s) => {
+      if (s.checkIn && s.checkOut) {
+        totalMinutes += timeToMinutes(s.checkOut) - timeToMinutes(s.checkIn);
+      }
+    });
 
-      const hours = diff / 60;
-      // const diff =
-      //   timeToMinutes(record.checkOut) - timeToMinutes(record.checkIn);
-      // if (diff < 0) diff += 24 * 60;
-      // const hours = diff / 60;
+    const hours = totalMinutes / 60;
 
-      record.workingHours = Math.round(hours * 100) / 100;
+    record.workingHours = (Math.round(hours * 100) / 100).toFixed(2);
 
-      if (hours < 2) record.status = "Absent";
-      else if (hours <= 4) record.status = "Half Day";
-      else record.status = "Present";
-    }
+    if (hours < 2) record.status = "Absent";
+    else if (hours <= 4) record.status = "Half Day";
+    else record.status = "Present";
 
     await record.save();
 

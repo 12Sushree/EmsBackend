@@ -7,7 +7,7 @@ exports.sendMail = async ({ to, subject, html }) => {
       {
         sender: {
           name: "EMS System",
-          email: "sushreeta4112@gmail.com", // must be verified in Brevo
+          email: "sushreeta4112@gmail.com",
         },
         to: [{ email: to }],
         subject: subject,

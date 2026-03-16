@@ -11,12 +11,12 @@ const attendanceSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
-    checkIn: {
-      type: Date,
-    },
-    checkOut: {
-      type: Date,
-    },
+    sessions: [
+      {
+        checkIn: Date,
+        checkOut: Date,
+      },
+    ],
     workingHours: {
       type: Number,
       default: 0,
